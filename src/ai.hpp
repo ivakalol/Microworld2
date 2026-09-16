@@ -1,4 +1,5 @@
 #pragma once
+using namespace std;
 
 #include<algorithm>
 #include<string>
@@ -15,7 +16,7 @@ protected:
   // Necessary, do not delete.
   unsigned id;
   unsigned agent_speed;
-  std::mt19937_64* rng;
+  mt19937_64* rng;
   Symbols symbols;
   Costs costs;
 public:
@@ -23,11 +24,11 @@ public:
   AI(
      unsigned id, 
      unsigned agent_speed,
-     std::mt19937_64* rng,
+     mt19937_64* rng,
      Symbols symbols,
      Costs costs);
   void PrintPercepts(const Percepts & percepts);
-  std::vector<std::string> Run(
+  vector<string> Run(
 			       Percepts & percepts,
 			       AgentComm * comms);
 };

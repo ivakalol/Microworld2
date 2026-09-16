@@ -1,6 +1,6 @@
 {
     "num_agents": 2,
-    "agent_speed": 4,
+    "agent_speed": 40,
     "agent_sight": [ 4, 2, 2, 0 ],
     "wall":"w",
     "open": "o",
