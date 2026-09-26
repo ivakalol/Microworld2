@@ -56,11 +56,11 @@ vector<string> AI::Run(
 
   if(percepts.detector == 1) {
     currentlyDoing = "BOMB DETECTED MODE";
-    if(percepts.last_move == "L") {
-      cmds[0] = "D";
+    if(percepts.last_move == "D") {
+      cmds[0] = "L";
     } 
     else { 
-      cmds[0] = "L";
+      cmds[0] = "D";
     }
   }
 
