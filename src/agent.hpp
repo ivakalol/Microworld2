@@ -20,6 +20,7 @@ private:
   AgentSight sight;
   unsigned speed;
   unsigned id;
+  std::string last_move;
   std::unique_ptr<AI> ai;
   AgentState state;
   AgentType type;
@@ -30,6 +31,7 @@ public:
         Vec2 loc, Vec2 heading, AgentSight sight, unsigned id, std::mt19937_64 * rng,
         unsigned speed, AgentType type, Symbols symbols, Costs costs);
   unsigned GetID() const;
+  std::string GetLastMove() const;
   Vec2 GetLoc() const;
   Vec2 GetHeading() const;
   AgentState GetAgentState() const;
@@ -39,6 +41,7 @@ public:
   void SetPoints(int p);
   void SetSpeed(unsigned s);
   void SetAgentState(AgentState as);
+  void SetLastMove(const std::string move);
   void SetLoc(Vec2 v);
   void SetHeading(Vec2 v);
   void AddPoints(int p);

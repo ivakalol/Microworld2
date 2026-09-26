@@ -1,5 +1,5 @@
 #include"ai.hpp"
-using namespace ;std
+using namespace std;
 
 /***************************************************************
 AI CLASS DEFINITION
@@ -50,6 +50,19 @@ vector<string> AI::Run(
   PrintPercepts(percepts);
   vector<string> cmds {"R", "B", "L", "F", "U", "D"};
   shuffle(cmds.begin(), cmds.end(), *rng);
+
+  if(percepts.detector == 1) {
+    if(percepts.last_move == "L") {
+      cmds[0] = "D";
+    } 
+    else { 
+      cmds[0] = "L";
+    }
+  }
+
+
+
+  cout << "last move " << percepts.last_move << endl;
   cout << "CMD:      " << cmds[0] << endl;
   return {cmds[0]};
 }

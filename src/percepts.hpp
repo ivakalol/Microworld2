@@ -3,8 +3,8 @@
 #include<vector>
 #include<string>
 #include<utility>
-
 #include"vec2.hpp"
+using namespace std;
 
 enum class AgentType {
     AGENT,
@@ -12,22 +12,23 @@ enum class AgentType {
 };
 
 struct Percepts {
-  std::vector<std::string> current;
-  std::vector<std::string> forward;
-  std::vector<std::string> backward;
-  std::vector<std::string> left;
-  std::vector<std::string> right;
+  vector<string> current;
+  vector<string> forward;
+  vector<string> backward;
+  vector<string> left;
+  vector<string> right;
+  string last_move;
   int detector;
-  std::vector<Vec2> others;
+  vector<Vec2> others;
 };
 
 struct Symbols {
-  std::vector<std::string> teleporters;
-  std::string wall;
-  std::string open;
-  std::string disarmed_mine;
-  std::string exploded_mine;
-  std::string treasure;
+  vector<string> teleporters;
+  string wall;
+  string open;
+  string disarmed_mine;
+  string exploded_mine;
+  string treasure;
 };
 
 struct Costs {
