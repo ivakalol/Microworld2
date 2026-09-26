@@ -45,13 +45,17 @@ vector<string> AI::Run(
     Percepts & percepts,
     AgentComm * comms
 ) {
+  string currentlyDoing = "nothing";
+
   cout << "------------------------------------------------\n";
   cout << "AGENT ID: " << id << endl;
   PrintPercepts(percepts);
   vector<string> cmds {"R", "B", "L", "F", "U", "D"};
   shuffle(cmds.begin(), cmds.end(), *rng);
+  currentlyDoing = "Random things";
 
   if(percepts.detector == 1) {
+    currentlyDoing = "BOMB DETECTED MODE";
     if(percepts.last_move == "L") {
       cmds[0] = "D";
     } 
@@ -61,7 +65,7 @@ vector<string> AI::Run(
   }
 
 
-
+  cout << "Currently doing: " << currentlyDoing << endl;
   cout << "last move " << percepts.last_move << endl;
   cout << "CMD:      " << cmds[0] << endl;
   return {cmds[0]};
