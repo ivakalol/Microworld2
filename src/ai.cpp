@@ -40,7 +40,11 @@ void AI::PrintPercepts(const Percepts & percepts) {
     cout << "   " << i << ": " << percepts.others[i].to_string() << endl;
   }
 }
+bool matchesTeleporter(string cell, vector<string> & teleporters);
+string treasureAround(Percepts & percepts, Symbols & symbols);
+string bombNextToMe(Percepts & percepts, Symbols & symbols);
 
+//MAIN THING
 vector<string> AI::Run(
     Percepts & percepts,
     AgentComm * comms
@@ -50,20 +54,54 @@ vector<string> AI::Run(
   cout << "------------------------------------------------\n";
   cout << "AGENT ID: " << id << endl;
   PrintPercepts(percepts);
-  vector<string> cmds {"R", "B", "L", "F", "U", "D"};
+  vector<string> cmds {"R", "B", "L", "F"};
   shuffle(cmds.begin(), cmds.end(), *rng);
   currentlyDoing = "Random things";
 
-  if(percepts.detector == 1) {
-    currentlyDoing = "BOMB DETECTED MODE";
-    if(percepts.last_move == "D") {
-      cmds[0] = "L";
-    } 
-    else { 
-      cmds[0] = "D";
-    }
+  
+
+  if(percepts.current[1] == symbols.wall) {
+    currentlyDoing = "WALL INFRONT";
+    cmds[0] = "R";
   }
 
+
+
+
+  
+  //if agent is on teleport
+  if( ( matchesTeleporter(percepts.current[0], symbols.teleporters) ) && (percepts.last_move != "U") ) {
+    currentlyDoing = "TELEPORTER DETECTED MODE";
+      cmds[0] = "U";
+  }
+  
+
+
+
+  //Treasure in around agent
+  string treasureAroundResult = treasureAround(percepts, symbols);
+  if(treasureAroundResult != "NO TREASURE AROUND") {
+    currentlyDoing = "TREASURE AROUND MODE";
+    cmds[0] = treasureAroundResult;
+  }
+  
+
+
+  //if treasure 4 blocks infront, but trap wants us to rotate once to defuse, then we will lose the treasure!!! Need to remember where treasure 
+
+
+
+  //HIGHEST PRIORITY: LAST!
+  if(percepts.detector == 1) {
+    cmds[0] = bombNextToMe(percepts, symbols);
+  }
+
+
+
+  if(percepts.current[0] == symbols.treasure) {
+    currentlyDoing = "TREASURE UNDER ME";
+    cmds[0] = "T";
+  }
 
   cout << "Currently doing: " << currentlyDoing << endl;
   cout << "last move " << percepts.last_move << endl;
@@ -71,5 +109,37 @@ vector<string> AI::Run(
   return {cmds[0]};
 }
 
+
+
+string bombNextToMe(Percepts & percepts, Symbols & symbols){
+  if(percepts.last_move == "D") {
+    return "L";
+  } 
+  else { 
+    return "D";
+  } 
+}
+
+
+string treasureAround(Percepts & percepts, Symbols & symbols){
+  if(percepts.forward[0] == symbols.treasure || percepts.forward[1] == symbols.treasure || percepts.forward[2] == symbols.treasure ||percepts.forward[3] == symbols.treasure) {
+    return "F";
+  }
+  if(percepts.left[0] == symbols.treasure || percepts.left[1] == symbols.treasure ) {
+    return "L";
+  }
+  if(percepts.right[0] == symbols.treasure || percepts.right[1] == symbols.treasure ) {
+    return "R";
+  }
+  return "NO TREASURE AROUND";
+}
+
+//checks if the cell is a teleporter
+bool matchesTeleporter(string cell, vector<string> & teleporters) {
+  for(size_t i = 0; i < teleporters.size(); i++) {
+    if(cell == teleporters[i]) return true;
+  }
+  return false;
+}
 
 

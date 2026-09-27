@@ -1,5 +1,5 @@
 {
-    "num_agents": 1,
+    "num_agents": 2,
     "agent_speed": 5,
     "agent_sight": [ 4, 2, 2, 0 ],
     "wall":"w",
