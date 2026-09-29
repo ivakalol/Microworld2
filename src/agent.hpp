@@ -29,7 +29,7 @@ public:
   Agent();
   Agent(
         Vec2 loc, Vec2 heading, AgentSight sight, unsigned id, std::mt19937_64 * rng,
-        unsigned speed, AgentType type, Symbols symbols, Costs costs);
+        unsigned speed, AgentType type, Symbols symbols, Costs costs, int max_turn);
   unsigned GetID() const;
   std::string GetLastMove() const;
   Vec2 GetLoc() const;
