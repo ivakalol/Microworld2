@@ -17,7 +17,6 @@ struct Percepts {
   vector<string> backward;
   vector<string> left;
   vector<string> right;
-  string last_move;
   int detector;
   vector<Vec2> others;
 };

@@ -43,7 +43,7 @@ void AI::PrintPercepts(const Percepts & percepts) {
 }
 bool matchesTeleporter(string cell, vector<string> & teleporters);
 string treasureAround(Percepts & percepts, Symbols & symbols);
-string bombNextToMe(Percepts & percepts, Symbols & symbols);
+string bombNextToMe(string last_move);
 
 //MAIN THING
 vector<string> AI::Run(
@@ -61,7 +61,7 @@ vector<string> AI::Run(
 
   
 
-  if(percepts.current[1] == symbols.wall) {
+  if(percepts.current[0] == symbols.wall) {
     currentlyDoing = "WALL INFRONT";
     cmds[0] = "R";
   }
@@ -71,7 +71,7 @@ vector<string> AI::Run(
 
   
   //if agent is on teleport
-  if( ( matchesTeleporter(percepts.current[0], symbols.teleporters) ) && (percepts.last_move != "U") ) {
+  if( ( matchesTeleporter(percepts.current[0], symbols.teleporters) ) && (last_move != "U") ) {
     currentlyDoing = "TELEPORTER DETECTED MODE";
       cmds[0] = "U";
   }
@@ -94,7 +94,7 @@ vector<string> AI::Run(
 
   //HIGHEST PRIORITY: LAST!
   if(percepts.detector == 1) {
-    cmds[0] = bombNextToMe(percepts, symbols);
+    cmds[0] = bombNextToMe(last_move);
   }
 
 
@@ -105,15 +105,17 @@ vector<string> AI::Run(
   }
 
   cout << "Currently doing: " << currentlyDoing << endl;
-  cout << "last move " << percepts.last_move << endl;
+  cout << "last move " << last_move << endl;
   cout << "CMD:      " << cmds[0] << endl;
+
+  last_move = cmds[0];
   return {cmds[0]};
 }
 
 
 
-string bombNextToMe(Percepts & percepts, Symbols & symbols){
-  if(percepts.last_move == "D") {
+string bombNextToMe(string last_move){
+  if(last_move == "D") {
     return "L";
   } 
   else { 

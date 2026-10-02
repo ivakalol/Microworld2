@@ -20,6 +20,8 @@ protected:
   Symbols symbols;
   Costs costs;
   int max_turn;
+
+  string last_move;
 public:
   AI();
   AI(

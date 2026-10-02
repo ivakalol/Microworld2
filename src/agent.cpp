@@ -1,4 +1,5 @@
 #include"agent.hpp"
+using namespace std;
 
 Agent::Agent() {}
 Agent::Agent(
@@ -16,8 +17,6 @@ Agent::Agent(
   ai = std::make_unique<AI>(id, speed, rng, symbols, costs, max_turn);
 }
 unsigned Agent::GetID() const { return id; }
-std::string Agent::GetLastMove() const { return last_move; }
-void Agent::SetLastMove(const std::string move) { last_move = move; }
 Vec2 Agent::GetLoc() const { return loc; }
 Vec2 Agent::GetHeading() const { return heading; }
 AgentState Agent::GetAgentState() const { return state; }

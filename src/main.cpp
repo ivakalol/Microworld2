@@ -289,7 +289,6 @@ void loop(
 	    Vec2 dir = agents[i].GetRelativeDirTo(agents[a].GetLoc());
 	    percepts.others.push_back(dir);
 	  }
-	  percepts.last_move = agents[i].GetLastMove();// Adding this percepts also (the last move)
 
 	  // Call the AI
 	  std::vector<std::string> cmds = agents[i].RunAI(percepts, &comms);
@@ -307,7 +306,6 @@ void loop(
 	      s++; continue;
 	    }
 	    std::string cmd = cmds[s]; //this is the current command
-		agents[i].SetLastMove(cmd); //and here I add it to the stored last move
 	    location = agents[i].GetLoc();
 	    forward = agents[i].GetHeading();
 	    left = Vec2(forward.y, -forward.x);
