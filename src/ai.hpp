@@ -11,6 +11,16 @@ using namespace std;
 #include"percepts.hpp"
 #include"comm.hpp"
 
+struct Cell {
+    string symbol;
+    bool visited = false;
+    bool explored = false;
+};
+
+enum class Direction {
+    N, E, S, W
+};
+
 class AI {
 protected:
   // Necessary, do not delete.
@@ -20,6 +30,11 @@ protected:
   Symbols symbols;
   Costs costs;
   int max_turn;
+  map<pair<int, int>, Cell> knownMap;
+  int x = 0; 
+  int y = 0;
+  Direction facing = Direction::N; //cuz we always start facing north. if -rh is enabled, then
+                                   // every agent will start with local north.
 
   string last_move;
 public:
@@ -35,6 +50,8 @@ public:
   vector<string> Run(
 			       Percepts & percepts,
 			       AgentComm * comms);
+  void UpdateMap(Percepts & percepts);
+  void PrintKnownMap();
 };
 
 
