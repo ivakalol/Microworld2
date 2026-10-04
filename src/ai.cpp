@@ -44,17 +44,18 @@ void AI::PrintPercepts(const Percepts & percepts) {
 }
 void AI::PrintKnownMap() {
   cout << "KNOWN MAP:\n";
-  for(int i = -5; i <= 5; i++) {
-    for(int j = -5; j <= 5; j++) {
+  for(int i = 5; i >= -5; i--) {
+    for (int j = -5; j <= 5; j++) {
+      if (j == x && i == y) {
+          cout << "X ";
+          continue;
+      }
+
       auto it = knownMap.find({j, i});
-      if(it == knownMap.end()) {
-        cout << "? ";
-      } else {
-        if(it->second.explored) {
+      if (it != knownMap.end() && it->second.explored) {
           cout << it->second.symbol << " ";
-        } else {
-          cout << "? ";
-        }
+      } else {
+            cout << "? ";
       }
     }
     cout << endl;
@@ -96,6 +97,41 @@ string bombNextToMe(string last_move){
 }
 
 void AI::UpdateMap(Percepts & percepts) {
+  //No checks if block going to is invalid, cuz i trust my self and the logic behind the AI::RUN! aaaa
+  if(last_move == "F") {
+    switch(facing) {
+      case Direction::N: y += 1; break;
+      case Direction::E: x += 1; break;
+      case Direction::S: y -= 1; break;
+      case Direction::W: x -= 1; break;
+    }
+  }
+  else if(last_move == "B") {
+    switch(facing) {
+      case Direction::N: y -= 1; break;
+      case Direction::E: x -= 1; break;
+      case Direction::S: y += 1; break;
+      case Direction::W: x += 1; break;
+    }
+  }
+  else if(last_move == "L") {
+    switch(facing) {
+      case Direction::N: facing = Direction::W; break;
+      case Direction::E: facing = Direction::N; break;
+      case Direction::S: facing = Direction::E; break;
+      case Direction::W: facing = Direction::S; break;
+    }
+  }
+  else if(last_move == "R") {
+    switch(facing) {
+      case Direction::N: facing = Direction::E; break;
+      case Direction::E: facing = Direction::S; break;
+      case Direction::S: facing = Direction::W; break;
+      case Direction::W: facing = Direction::N; break;
+    }
+  }
+    
+
   //cell under agent
   Cell & currentCell = knownMap[{x, y}];
   currentCell.symbol = percepts.current[0];
@@ -179,11 +215,6 @@ vector<string> AI::Run(
   shuffle(cmds.begin(), cmds.end(), *rng);
   currentlyDoing = "Random things";
 
-  UpdateMap(percepts);
-
-
-
-
 
   
   //if agent is on teleport IDK what to do now with teleporters.
@@ -205,10 +236,9 @@ vector<string> AI::Run(
 
 
 
-
-
   //HIGHEST PRIORITY: LAST!
   if(percepts.detector == 1) {
+     currentlyDoing = "BOMB MODE";
     cmds[0] = bombNextToMe(last_move);
   }
   //If agent is on treasure, pick it up then think ab bombs
@@ -223,6 +253,7 @@ vector<string> AI::Run(
   PrintKnownMap();
   
   last_move = cmds[0];
+  UpdateMap(percepts);
   return {cmds[0]};
 }
 
