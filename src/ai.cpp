@@ -44,8 +44,8 @@ void AI::PrintPercepts(const Percepts & percepts) {
 }
 void AI::PrintKnownMap() {
   cout << "KNOWN MAP:\n";
-  for(int i = 5; i >= -5; i--) {
-    for (int j = -5; j <= 5; j++) {
+  for(int i = 10; i >= -10; i--) {
+    for (int j = -10; j <= 10; j++) {
       if (j == x && i == y) {
           cout << "X ";
           continue;
@@ -55,7 +55,7 @@ void AI::PrintKnownMap() {
       if (it != knownMap.end() && it->second.explored) {
           cout << it->second.symbol << " ";
       } else {
-            cout << "? ";
+            cout << "  ";
       }
     }
     cout << endl;
@@ -97,7 +97,7 @@ string bombNextToMe(string last_move){
 }
 
 void AI::UpdateMap(Percepts & percepts) {
-  //No checks if block going to is invalid, cuz i trust my self and the logic behind the AI::RUN! aaaa
+  //No checks if block going to is invalid, cuz i trust my self and the logic behind the AI::RUN! aaaa!!!!
   if(last_move == "F") {
     switch(facing) {
       case Direction::N: y += 1; break;
@@ -202,10 +202,8 @@ void AI::UpdateMap(Percepts & percepts) {
 
 
 //MAIN THINGY
-vector<string> AI::Run(
-    Percepts & percepts,
-    AgentComm * comms
-) {
+vector<string> AI::Run( Percepts & percepts, AgentComm * comms) {
+  UpdateMap(percepts);
   string currentlyDoing = "nothing";
 
   cout << "------------------------------------------------\n";
@@ -214,15 +212,6 @@ vector<string> AI::Run(
   vector<string> cmds {"R", "B", "L", "F"};
   shuffle(cmds.begin(), cmds.end(), *rng);
   currentlyDoing = "Random things";
-
-
-  
-  //if agent is on teleport IDK what to do now with teleporters.
-  // if( ( matchesTeleporter(percepts.current[0], symbols.teleporters) ) && (last_move != "U") ) {
-  //   currentlyDoing = "TELEPORTER DETECTED MODE";
-  //     cmds[0] = "U";
-  // }
-  
 
 
 
@@ -234,13 +223,11 @@ vector<string> AI::Run(
   }
   
 
-
-
-  //HIGHEST PRIORITY: LAST!
-  if(percepts.detector == 1) {
-     currentlyDoing = "BOMB MODE";
+    if(percepts.detector == 1) {
+     //goal = true;
     cmds[0] = bombNextToMe(last_move);
   }
+
   //If agent is on treasure, pick it up then think ab bombs
   if(percepts.current[0] == symbols.treasure) {
     currentlyDoing = "TREASURE UNDER ME";
@@ -253,7 +240,6 @@ vector<string> AI::Run(
   PrintKnownMap();
   
   last_move = cmds[0];
-  UpdateMap(percepts);
   return {cmds[0]};
 }
 

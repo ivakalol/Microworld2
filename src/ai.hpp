@@ -35,8 +35,12 @@ protected:
   int y = 0;
   Direction facing = Direction::N; //cuz we always start facing north. if -rh is enabled, then
                                    // every agent will start with local north.
-
+  
   string last_move;
+  bool has_goal = false;
+  pair<int, int> goal;
+  int goal_cost = 0;
+  
 public:
   AI();
   AI(
