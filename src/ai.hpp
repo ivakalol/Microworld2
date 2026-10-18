@@ -17,6 +17,12 @@ struct Cell {
     bool explored = false;
 };
 
+struct PathResult {
+    bool found = false;
+    int cost = 0;
+    vector<string> commands;
+};
+
 enum class Direction {
     N, E, S, W
 };
@@ -34,28 +40,20 @@ protected:
   int x = 0; 
   int y = 0;
   Direction facing = Direction::N; //cuz we always start facing north. if -rh is enabled, then
-                                   // every agent will start with local north.
-  
+                                   // every agent will start with local north. It will be ok if they don't share info one to another.
   string last_move;
-  bool has_goal = false;
   pair<int, int> goal;
-  int goal_cost = 0;
+  PathResult goal_path;
   
 public:
   AI();
-  AI(
-     unsigned id, 
-     unsigned agent_speed,
-     mt19937_64* rng,
-     Symbols symbols,
-     Costs costs,
-     int max_turn);
+  AI(unsigned id,  unsigned agent_speed, mt19937_64* rng, Symbols symbols, Costs costs, int max_turn);
   void PrintPercepts(const Percepts & percepts);
-  vector<string> Run(
-			       Percepts & percepts,
-			       AgentComm * comms);
+  vector<string> Run( Percepts & percepts, AgentComm * comms);
   void UpdateMap(Percepts & percepts);
   void PrintKnownMap();
+  string bombNextToMe(string last_move, Percepts & percepts);
+  PathResult FindPath(pair<int, int> target, bool explore);
 };
 
 
