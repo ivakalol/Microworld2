@@ -36,16 +36,6 @@ struct TeleportLink {
 };
 
 
-struct TeleporterInfo {
-    int chunkId;
-    pair<int, int> position;
-};
-
-struct TeleportLink {
-    string destinationSymbol;
-    bool destinationKnown = false;
-};
-
 enum class Direction {
     N, E, S, W
 };
