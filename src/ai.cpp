@@ -1,5 +1,7 @@
   #include"ai.hpp"
   #include <tuple>
+  #include <vector>
+  #include <queue>
   using namespace std;
 
   /***************************************************************
@@ -197,8 +199,19 @@
   //TO DO: I need to make it so that it checks the known map for treasure, not just the percepts.
   //TO DO: I need to make it remember facing direction before it starts rotating
   //Maybe if there is a goal, add to the goal queue the opposite directions to face
-  string treasureAround(Percepts & percepts, Symbols & symbols)
-  {
+  string AI::TreasureAround(Percepts & percepts, Symbols & symbols){
+    // for (const auto& [position, cell] : knownMap) {
+    //   if (!cell.explored || cell.symbol != symbols.treasure)
+    //     {continue;}
+
+    //   auto path = FindPath(position, false);
+    //   if (path.found && !path.commands.empty()) {
+    //       goal_path = move(path);
+    //       return true;
+    //   }
+    // }
+    // return false;
+
     if(percepts.forward[0] == symbols.treasure || percepts.forward[1] == symbols.treasure || percepts.forward[2] == symbols.treasure ||percepts.forward[3] == symbols.treasure) {
       return "F";
     }
@@ -218,7 +231,7 @@
   string AI::bombNextToMe(string last_move, Percepts & percepts){
     if(last_move == "D") {
       if(goal_path.found == true) {
-        goal_path.commands.insert(goal_path.commands.begin(), "R");
+        goal_path.commands.push("R");
       }
       return "L";
     } 
@@ -227,10 +240,6 @@
     } 
   }
 
-
-
-
-  
 
 
 
@@ -293,17 +302,23 @@
           }
 
           // The stored commands already contain the full route.
-          if ( (current.x == target.first && current.y == target.second) && !explore) {
-              result.found = true;
-              result.cost = current.g;
-              result.commands = current.commands;
-              return result;
+          bool reachedGoal;
+
+          if (explore) {
+            reachedGoal = !knownMap.at({current.x, current.y}).visited;
+          } 
+          else {
+            reachedGoal = current.x == target.first && current.y == target.second;
           }
-          if (explore && knownMap[{current.x, current.y}].visited == false) {
-              result.found = true;
-              result.cost = current.g;
-              result.commands = current.commands;
-              return result;
+
+          if (reachedGoal) {
+            result.found = true;
+            result.cost = current.g;
+
+             for (auto it = current.commands.rbegin(); it != current.commands.rend(); ++it) {
+              result.commands.push(*it);
+            }
+            return result;
           }
 
           // Calculate forward movement for this state's facing.
@@ -318,7 +333,7 @@
           
           //find children for all actions.
           // this is like foreach loop in C#
-          for (const string & action : vector<string>{"F", "B", "L", "R"}) {
+          for (const string & action : vector<string>{"F", "L", "R"}) {
               SearchState neighbour = current;
 
               if (action == "F") {
@@ -364,10 +379,16 @@
 
               bestCost[neighbourKey] = neighbour.g;
               neighbour.commands.push_back(action);
+              // if(action == "B"){ //didn't work so i simply removed "B" from list of actions... This will never be used
+              //   neighbour.commands.insert(neighbour.commands.begin(), "L");
+              //   neighbour.commands.insert(neighbour.commands.begin(), "L");
+              // }
+              // else{
+                
+              // }
               queue.push_back(neighbour);
           }
       }
-
       // No route through the known map.
       return result;
   }
@@ -398,10 +419,23 @@
     // If we don't have a goal, find one.
     if (goal_path.commands.empty()) {
       currentlyDoing = "Explore";
-      goal = {0, 0};
+      //goal = {0, 0};
       goal_path = FindPath({0, 0}, true);
     }
     
+    if (!goal_path.found) {
+      currentlyDoing = "No path found";
+      if (last_move != "R") {
+        //From the start, we can be at the end of a coridor, facing wall and on both sides walls. Only possible way is
+        // the block behind us, but we can't see/map it, so we need to turn right so that we can see it
+        goal_path.commands.push("R");
+      }
+      else{//Here we look for teleportation symbols in the known map and try to find a path to them
+        
+      }
+      
+      
+    }
 
     
 
@@ -412,29 +446,43 @@
    
 
 
-    //If agent is on treasure, pick it up then think ab bombs
+    //Look if discovered a treasure right under us
     if(percepts.current[0] == symbols.treasure && last_move != "T") {
       currentlyDoing = "TREASURE UNDER ME";
-      goal_path.commands.insert(goal_path.commands.begin(), "T");
-    }
+      goal_path.commands.push("T");
+      }
 
-    if(percepts.detector == 1) {
-      currentlyDoing = "BOMB NEXT TO ME";
-      cmd = bombNextToMe(last_move, percepts);
+    else{
+      //If agent is on treasure, pick it up then think ab bombs
+      
+      string treasureCmd = TreasureAround(percepts, symbols);
+      if(treasureCmd != "NO TREASURE INFRONT" ) {
+        currentlyDoing = "Going to treasure";
+        cmd = treasureCmd;
+      }
+
+      //Bomb around me
+      if(percepts.detector == 1) {
+        currentlyDoing = "BOMB NEXT TO ME";
+        cmd = bombNextToMe(last_move, percepts);
+      }      
     }
+    //Doing Commants from goal_path
     if (!goal_path.commands.empty() && percepts.detector != 1) {
-      cmd = goal_path.commands.at(0);
+      if(cmd == "nothing") {
+        currentlyDoing = "Following goal path";
+      }
+      cmd = goal_path.commands.top();
     }
-
     if(!goal_path.commands.empty() && percepts.detector != 1){
-      goal_path.commands.erase(goal_path.commands.begin());
+        goal_path.commands.pop();
     }
-    
     cout << "Currently doing: " << currentlyDoing << endl;
     cout << "last move " << last_move << endl;
     cout << "CMD:      " << cmd << endl;
-    PrintKnownMap();
+    //PrintKnownMap();
     last_move = cmd;
+    max_turn--;
     return {cmd};
   }
 
