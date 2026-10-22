@@ -2,6 +2,7 @@
   #include <tuple>
   #include <vector>
   #include <queue>
+  #include <ranges>
   using namespace std;
 
   /***************************************************************
@@ -92,7 +93,10 @@
         y = nextY;
     }
     else {
-        cout << "LAST MOVE WAS INVALID?!?!?!?!?!?!?!?!?!?!!??!?!" << endl;
+        cout << "LAST MOVE WAS INVALID!!!" << endl;
+        for(int i = 0; i < 10; i++){
+          goal_path.commands.push("L"); //Punish agent ! (actually for testing)
+        }
         last_move = ""; // Clear last_move to avoid repeating the same action.
         return;
     }
@@ -182,6 +186,7 @@
   }
 
 
+  
   //MATCHES TELEPORTER FUNCTION
   bool matchesTeleporter(string cell, vector<string> & teleporters){
     for(size_t i = 0; i < teleporters.size(); i++) {
@@ -196,31 +201,33 @@
 
 
   //TREASURE AROUND FUNCTION 
-  //TO DO: I need to make it so that it checks the known map for treasure, not just the percepts.
-  //TO DO: I need to make it remember facing direction before it starts rotating
-  //Maybe if there is a goal, add to the goal queue the opposite directions to face
   string AI::TreasureAround(Percepts & percepts, Symbols & symbols){
-    // for (const auto& [position, cell] : knownMap) {
-    //   if (!cell.explored || cell.symbol != symbols.treasure)
-    //     {continue;}
-
-    //   auto path = FindPath(position, false);
-    //   if (path.found && !path.commands.empty()) {
-    //       goal_path = move(path);
-    //       return true;
-    //   }
+    // for (string cell : percepts.forward) {
+    //     if (cell == symbols.treasure) return "F";
     // }
-    // return false;
 
-    if(percepts.forward[0] == symbols.treasure || percepts.forward[1] == symbols.treasure || percepts.forward[2] == symbols.treasure ||percepts.forward[3] == symbols.treasure) {
-      return "F";
+    // for (string cell : percepts.left) {
+    //   if (cell == symbols.treasure) return "L";
+    // }
+
+    // for (string cell : percepts.right) {
+    //   if (cell == symbols.treasure) return "R";
+    // }
+
+
+    int sizeF = percepts.forward.size();
+    int sizeL = percepts.left.size();
+    int sizeR = percepts.right.size();
+    for(int i = 0; i < sizeF; i++) {
+      if(percepts.forward[i] == symbols.treasure) return "F";
     }
-    if(percepts.left[0] == symbols.treasure || percepts.left[1] == symbols.treasure ) {
-      return "L";
+    for(int i = 0; i < sizeL; i++) {
+      if(percepts.left[i] == symbols.treasure) return "L";
     }
-    if(percepts.right[0] == symbols.treasure || percepts.right[1] == symbols.treasure ) {
-      return "R";
+    for(int i = 0; i < sizeR; i++) {
+      if(percepts.right[i] == symbols.treasure) return "R";
     }
+
     return "NO TREASURE INFRONT";
   }
 
@@ -281,9 +288,19 @@
               }
               break;
             case false:
-              for (int i = 1; i < queue.size(); i++) {
-                if ( (queue[i].g + queue[i].h ) < (queue[bestIndex].g + queue[bestIndex].h) ) 
-                { bestIndex = i; }
+              vector<int> chance = {0,1};
+              shuffle(chance.begin(), chance.end(), *rng);
+              if(chance[0] == 0){
+                for (int i = 1; i < queue.size(); i++) {
+                  if ( (queue[i].g + queue[i].h ) < (queue[bestIndex].g + queue[bestIndex].h) ) 
+                    { bestIndex = i; }
+                } 
+              }
+              else{
+                for (int i = queue.size() - 1; i > 0; i--) {
+                  if ( (queue[i].g + queue[i].h ) < (queue[bestIndex].g + queue[bestIndex].h) ) 
+                    { bestIndex = i; }
+                } 
               }
               break;
           }
@@ -333,7 +350,9 @@
           
           //find children for all actions.
           // this is like foreach loop in C#
-          for (const string & action : vector<string>{"F", "L", "R"}) {
+          vector<string> actions = {"F", "L", "R"};
+          shuffle(actions.begin(), actions.end(), *rng);
+          for (const string & action : actions) {
               SearchState neighbour = current;
 
               if (action == "F") {
@@ -399,7 +418,60 @@
 
 
 
+  void AI::FindTeleportBracket() {
+    
+        vector<int> chance = {1, 2};
+        shuffle(chance.begin(), chance.end(), *rng);
 
+        if (chance[0] == 1) {
+          // Forward loop: first element to last
+          for (const auto& [position, cell] : knownMap) {
+            if (!matchesTeleporter(cell.symbol, symbols.teleporters)) {
+              continue;
+            }
+
+            if (teleporters[cell.symbol].destinationKnown) {
+              continue;
+            }
+
+            PathResult path = FindPath(position, false);
+
+            if (!path.found) {
+                continue;
+            }
+
+            plannedTeleporter = cell.symbol;
+            goal_path = std::move(path);
+            //currentlyDoing = "Walking to teleport chance1" + plannedTeleporter;
+            break;
+          }
+        } 
+        else {
+          // Reverse loop: last element to first
+          for (auto it = knownMap.rbegin(); it != knownMap.rend(); ++it) {
+            const auto& [position, cell] = *it;
+
+            if (!matchesTeleporter(cell.symbol, symbols.teleporters)) {
+              continue;
+            }
+
+            if (teleporters[cell.symbol].destinationKnown) {
+              continue;
+            }
+
+            PathResult path = FindPath(position, false);
+
+            if (!path.found) {
+              continue;
+            }
+
+            plannedTeleporter = cell.symbol;
+            goal_path = std::move(path);
+            //currentlyDoing = "Walking to teleport chance2" + plannedTeleporter;
+            break;
+          }
+        }
+  }
 
 
 
@@ -407,17 +479,33 @@
 
   //MAIN THINGY
   vector<string> AI::Run( Percepts & percepts, AgentComm * comms) {
-    UpdateMap(percepts);
+    //UpdateTeleporter();
     cout << "------------------------------------------------\n";
     cout << "AGENT ID: " << id << endl;
     PrintPercepts(percepts);
     string currentlyDoing = "nothing";
     string cmd = "";
 
+    if (last_move == "U" && !departureTeleporter.empty()) {
+      TeleporterInfo& teleport = teleporters[departureTeleporter];
 
+      teleport.destinationSymbol = percepts.current[0];
+      teleport.destinationKnown = true;
+
+      cout << "Teleported from " << departureTeleporter
+         << " to " << teleport.destinationSymbol << endl;
+      knownMap.clear();
+      x = 0;
+      y = 0;
+
+      goal_path = PathResult{};
+      plannedTeleporter.clear();
+      departureTeleporter.clear();
+    }
+    UpdateMap(percepts);
 
     // If we don't have a goal, find one.
-    if (goal_path.commands.empty()) {
+    if (goal_path.commands.empty() && plannedTeleporter.empty()) {
       currentlyDoing = "Explore";
       //goal = {0, 0};
       goal_path = FindPath({0, 0}, true);
@@ -430,16 +518,12 @@
         // the block behind us, but we can't see/map it, so we need to turn right so that we can see it
         goal_path.commands.push("R");
       }
-      else{//Here we look for teleportation symbols in the known map and try to find a path to them
-        
-      }
-      
-      
+      else {
+        FindTeleportBracket();
+      }  
     }
 
     
-
-
 
 
     
@@ -448,9 +532,9 @@
 
     //Look if discovered a treasure right under us
     if(percepts.current[0] == symbols.treasure && last_move != "T") {
-      currentlyDoing = "TREASURE UNDER ME";
-      goal_path.commands.push("T");
-      }
+      currentlyDoing = "Picking up treasure";
+      cmd = "T";
+    }
 
     else{
       //If agent is on treasure, pick it up then think ab bombs
@@ -458,29 +542,46 @@
       string treasureCmd = TreasureAround(percepts, symbols);
       if(treasureCmd != "NO TREASURE INFRONT" ) {
         currentlyDoing = "Going to treasure";
-        cmd = treasureCmd;
+        goal_path = PathResult{};
+        goal_path.commands.push(treasureCmd);
+        plannedTeleporter.clear();
       }
 
       //Bomb around me
       if(percepts.detector == 1) {
         currentlyDoing = "BOMB NEXT TO ME";
         cmd = bombNextToMe(last_move, percepts);
-      }      
+      } 
+      if (cmd.empty() && !plannedTeleporter.empty() && percepts.current[0] == plannedTeleporter 
+          &&  !(teleporters[plannedTeleporter].destinationKnown) && percepts.detector != 1) {
+
+        currentlyDoing = "Using teleport " + plannedTeleporter;
+        cmd = "U";
+      }     
     }
+
     //Doing Commants from goal_path
-    if (!goal_path.commands.empty() && percepts.detector != 1) {
-      if(cmd == "nothing") {
-        currentlyDoing = "Following goal path";
-      }
+    // Execute and remove a route command only when no other action was selected.
+    if (cmd.empty() && !goal_path.commands.empty() && percepts.detector != 1) {
+      currentlyDoing = "Following goal path";
       cmd = goal_path.commands.top();
+      goal_path.commands.pop();
     }
-    if(!goal_path.commands.empty() && percepts.detector != 1){
-        goal_path.commands.pop();
-    }
+
+
+
+
+
+
     cout << "Currently doing: " << currentlyDoing << endl;
     cout << "last move " << last_move << endl;
     cout << "CMD:      " << cmd << endl;
     //PrintKnownMap();
+    if (cmd == "U") {
+      departureTeleporter = percepts.current[0];
+      plannedTeleporter.clear();
+      goal_path = PathResult{};
+    }
     last_move = cmd;
     max_turn--;
     return {cmd};

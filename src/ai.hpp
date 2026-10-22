@@ -11,6 +11,9 @@
 #include"percepts.hpp"
 #include"comm.hpp"
 
+//If multiple agents. if agent%2==0 meets another agent, locates a teleporter, then it will use it. 
+//If agent%2==1 meets another agent, locates a teleporter, then it will not use it.
+
 using namespace std;
 
 struct Cell {
@@ -25,16 +28,11 @@ struct PathResult {
     stack<string> commands;
 };
 
-struct TeleporterInfo {
-    int chunkId;
-    pair<int, int> position;
-};
 
-struct TeleportLink {
+struct TeleporterInfo {
     string destinationSymbol;
     bool destinationKnown = false;
 };
-
 
 enum class Direction {
     N, E, S, W
@@ -57,6 +55,10 @@ protected:
   string last_move;
   //pair<int, int> goal;
   PathResult goal_path;
+
+  map<string, TeleporterInfo> teleporters;
+  string plannedTeleporter;
+  string departureTeleporter;
   
 public:
   AI();
@@ -68,6 +70,8 @@ public:
   string bombNextToMe(string last_move, Percepts & percepts);
   PathResult FindPath(pair<int, int> target, bool explore);
   string TreasureAround(Percepts & percepts, Symbols & symbols);
+
+  void FindTeleportBracket();
 };
 
 
