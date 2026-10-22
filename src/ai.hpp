@@ -28,10 +28,18 @@ struct PathResult {
     stack<string> commands;
 };
 
+struct Chunk {
+    int id;
+    map<pair<int, int>, Cell> chunkMap;
+};
+
 
 struct TeleporterInfo {
     string destinationSymbol;
     bool destinationKnown = false;
+    int chunkId = -1;
+    int Tx = 0;
+    int Ty = 0;
 };
 
 enum class Direction {
@@ -40,38 +48,42 @@ enum class Direction {
 
 class AI {
 protected:
-  // Necessary, do not delete.
-  unsigned id;
-  unsigned agent_speed;
-  mt19937_64* rng;
-  Symbols symbols;
-  Costs costs;
-  int max_turn;
-  map<pair<int, int>, Cell> knownMap;
-  int x = 0; 
-  int y = 0;
-  Direction facing = Direction::N; //cuz we always start facing north. if -rh is enabled, then
+    // Necessary, do not delete.
+    unsigned id;
+    unsigned agent_speed;
+    mt19937_64* rng;
+    Symbols symbols;
+    Costs costs;
+    int max_turn;
+    map<pair<int, int>, Cell> knownMap;
+    int x = 0; 
+    int y = 0;
+    Direction facing = Direction::N; //cuz we always start facing north. if -rh is enabled, then
                                    // every agent will start with local north. It will be ok if they don't share info one to another.
-  string last_move;
-  //pair<int, int> goal;
-  PathResult goal_path;
+    string last_move;
+    //pair<int, int> goal;
+    PathResult goal_path;
 
-  map<string, TeleporterInfo> teleporters;
-  string plannedTeleporter;
-  string departureTeleporter;
+    map<string, TeleporterInfo> teleporters;
+    string plannedTeleporter;
+    string departureTeleporter;
+    int currentChunkId = 1;
+    int maxChunkId = 1;
+    map<int, Chunk> chunks;
   
 public:
-  AI();
-  AI(unsigned id,  unsigned agent_speed, mt19937_64* rng, Symbols symbols, Costs costs, int max_turn);
-  void PrintPercepts(const Percepts & percepts);
-  vector<string> Run( Percepts & percepts, AgentComm * comms);
-  void UpdateMap(Percepts & percepts);
-  void PrintKnownMap();
-  string bombNextToMe(string last_move, Percepts & percepts);
-  PathResult FindPath(pair<int, int> target, bool explore);
-  string TreasureAround(Percepts & percepts, Symbols & symbols);
+    AI();
+    AI(unsigned id,  unsigned agent_speed, mt19937_64* rng, Symbols symbols, Costs costs, int max_turn);
+    void PrintPercepts(const Percepts & percepts);
+    vector<string> Run( Percepts & percepts, AgentComm * comms);
+    void UpdateMap(Percepts & percepts);
+    void PrintKnownMap();
+    string bombNextToMe(string last_move, Percepts & percepts);
+    PathResult FindPath(pair<int, int> target, bool explore);
+    string TreasureAround(Percepts & percepts, Symbols & symbols);
+    bool matchesTeleporter(string cell, vector<string> & teleporters);
 
-  void FindTeleportBracket();
+    void FindTeleportBracket();
 };
 
 
