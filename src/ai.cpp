@@ -131,15 +131,17 @@ void AI::UpdateMap(Percepts &percepts) {
     }
   }
 
+
   // Register the current teleporter even if this cell was visited before.
-  const string &currentSymbol = percepts.current[0];
+  string& currentSymbol = percepts.current[0];
 
   if (matchesTeleporter(currentSymbol, symbols.teleporters)) {
-    TeleporterInfo &here = teleporters[currentSymbol];
+    TeleporterInfo& here = teleporters[currentSymbol];
     here.chunkId = currentChunkId;
     here.Tx = x;
     here.Ty = y;
   }
+
   //cell under agent
   Cell &currentCell = knownMap[{x, y}];
   if (!currentCell.visited) {
