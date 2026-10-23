@@ -291,9 +291,6 @@ void AI::UpdateMap(Percepts &percepts, AgentComm *comms) {
       cellOfOther.symbol = "A"; // where agent was observed
     }
   }
-
-
-
 }
 
 //MATCHES TELEPORTER FUNCTION
