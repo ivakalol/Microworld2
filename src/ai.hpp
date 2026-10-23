@@ -76,7 +76,7 @@ public:
     AI(unsigned id,  unsigned agent_speed, mt19937_64* rng, Symbols symbols, Costs costs, int max_turn);
     void PrintPercepts(const Percepts & percepts);
     vector<string> Run( Percepts & percepts, AgentComm * comms);
-    void UpdateMap(Percepts & percepts);
+    void UpdateMap(Percepts & percepts, AgentComm *comms);
     void PrintKnownMap();
     string bombNextToMe(string last_move, Percepts & percepts);
     PathResult FindPath(pair<int, int> target, bool explore);
@@ -84,6 +84,7 @@ public:
     bool matchesTeleporter(string cell, vector<string> & teleporters);
 
     void FindTeleportBracket();
+    void afterUsingTeleporter(Percepts &percepts);
 };
 
 

@@ -35,7 +35,7 @@ void AI::PrintPercepts(const Percepts &percepts) {
     cout << *it << " ";
   cout << endl;
   cout << "Others:\n";
-  for (size_t i = 0; i < percepts.others.size(); i++) {
+  for (int i = 0; i < percepts.others.size(); i++) {
     cout << "   " << i << ": " << percepts.others[i].to_string() << endl;
   }
 }
@@ -59,7 +59,7 @@ void AI::PrintKnownMap() {
   }
 }
 
-void AI::UpdateMap(Percepts &percepts) {
+void AI::UpdateMap(Percepts &percepts, AgentComm *comms) {
   if (last_move == "F" || last_move == "B") {
     int nextX = x;
     int nextY = y;
@@ -130,7 +130,6 @@ void AI::UpdateMap(Percepts &percepts) {
         break;
     }
   }
-
 
   // Register the current teleporter even if this cell was visited before.
   string& currentSymbol = percepts.current[0];
@@ -254,11 +253,52 @@ void AI::UpdateMap(Percepts &percepts) {
       break;
     }
   }
+
+  //cells of other agents
+  for ( Vec2 &other : percepts.others) {
+    // The list includes this agent.
+    if (other.x == 0 && other.y == 0)
+      continue;
+
+    int dx = 0;
+    int dy = 0;
+
+    switch (facing) {
+      case Direction::N:
+        dx = other.x;
+        dy = other.y;
+        break;
+      case Direction::E:
+        dx = other.y;
+        dy = -other.x;
+        break;
+      case Direction::S:
+        dx = -other.x;
+        dy = -other.y;
+        break;
+      case Direction::W:
+        dx = -other.y;
+        dy = other.x;
+        break;
+    }
+
+    Cell &cellOfOther = knownMap[{x + dx, y + dy}];
+    if (!cellOfOther.visited && !cellOfOther.explored) {
+      cellOfOther.explored = true;
+      if (comms->GetSignal(1) != 1){
+        cellOfOther.visited = true;
+      }
+      cellOfOther.symbol = "A"; // where agent was observed
+    }
+  }
+
+
+
 }
 
 //MATCHES TELEPORTER FUNCTION
 bool AI::matchesTeleporter(string cell, vector<string> &teleporters) {
-  for (size_t i = 0; i < teleporters.size(); i++) {
+  for (int i = 0; i < teleporters.size(); i++) {
     if (cell == teleporters[i])
       return true;
   }
@@ -525,6 +565,50 @@ void AI::FindTeleportBracket() {
   }
 }
 
+void AI::afterUsingTeleporter(Percepts &percepts) {
+  string arrivalTelep = percepts.current[0];
+  // Learn where the departure teleporter leads.
+  TeleporterInfo &departure = teleporters[departureTeleporter];
+  departure.destinationSymbol = arrivalTelep;
+  departure.destinationKnown = true;
+
+  // Save the area we just left, including visited cells.
+  chunks[currentChunkId].id = currentChunkId;
+  chunks[currentChunkId].chunkMap = knownMap;
+
+  // This is the DESTINATION entry, not the departure entry.
+  TeleporterInfo &arrival = teleporters[arrivalTelep];
+
+  if (arrival.chunkId != -1) {
+    // We have seen this destination before.
+    currentChunkId = arrival.chunkId;
+    knownMap = chunks.at(currentChunkId).chunkMap;
+    x = arrival.Tx;
+    y = arrival.Ty;
+  } else {
+    // Unknown destination: start a new local map.
+    currentChunkId = ++maxChunkId;
+    knownMap.clear();
+    x = 0;
+    y = 0;
+
+    chunks[currentChunkId].id = currentChunkId;
+
+    // Remember where this arrival teleporter belongs.
+    arrival.chunkId = currentChunkId;
+    arrival.Tx = x;
+    arrival.Ty = y;
+  }
+
+  cout << "Teleported from " << departureTeleporter << " to " << arrivalTelep << ", chunk "
+       << currentChunkId << endl;
+
+  // Routes from the previous location are no longer valid.
+  goal_path = PathResult{};
+  plannedTeleporter.clear();
+  departureTeleporter.clear();
+}
+
 //MAIN THINGY
 vector<string> AI::Run(Percepts &percepts, AgentComm *comms) {
   //UpdateTeleporter();
@@ -533,53 +617,15 @@ vector<string> AI::Run(Percepts &percepts, AgentComm *comms) {
   PrintPercepts(percepts);
   string currentlyDoing = "nothing";
   string cmd = "";
-
   if (last_move == "U" && !departureTeleporter.empty()) {
-    string arrivalTelep = percepts.current[0];
-
-    // Learn where the departure teleporter leads.
-    TeleporterInfo &departure = teleporters[departureTeleporter];
-    departure.destinationSymbol = arrivalTelep;
-    departure.destinationKnown = true;
-
-    // Save the area we just left, including visited cells.
-    chunks[currentChunkId].id = currentChunkId;
-    chunks[currentChunkId].chunkMap = knownMap;
-
-    // This is the DESTINATION entry, not the departure entry.
-    TeleporterInfo &arrival = teleporters[arrivalTelep];
-
-    if (arrival.chunkId != -1) {
-      // We have seen this destination before.
-      currentChunkId = arrival.chunkId;
-      knownMap = chunks.at(currentChunkId).chunkMap;
-      x = arrival.Tx;
-      y = arrival.Ty;
-    } else {
-      // Unknown destination: start a new local map.
-      currentChunkId = ++maxChunkId;
-      knownMap.clear();
-      x = 0;
-      y = 0;
-
-      chunks[currentChunkId].id = currentChunkId;
-
-      // Remember where this arrival teleporter belongs.
-      arrival.chunkId = currentChunkId;
-      arrival.Tx = x;
-      arrival.Ty = y;
-    }
-
-    cout << "Teleported from " << departureTeleporter << " to " << arrivalTelep << ", chunk "
-         << currentChunkId << endl;
-
-    // Routes from the previous location are no longer valid.
-    goal_path = PathResult{};
-    plannedTeleporter.clear();
-    departureTeleporter.clear();
+    afterUsingTeleporter(percepts);
   }
+  UpdateMap(percepts, comms);
 
-  UpdateMap(percepts);
+
+
+
+  //SETTING GOAL
 
   // If we don't have a goal, find one.
   if (goal_path.commands.empty() && plannedTeleporter.empty()) {
@@ -606,12 +652,11 @@ vector<string> AI::Run(Percepts &percepts, AgentComm *comms) {
   }
 
   else {
-    //If agent is on treasure, pick it up then think ab bombs
     string treasureCmd = TreasureAround(percepts, symbols);
     if (treasureCmd != "NO TREASURE INFRONT") {
       currentlyDoing = "Going to treasure";
       goal_path = PathResult{};
-      goal_path.commands.push(treasureCmd);
+      cmd = treasureCmd;
       plannedTeleporter.clear();
     }
 
@@ -620,22 +665,37 @@ vector<string> AI::Run(Percepts &percepts, AgentComm *comms) {
       currentlyDoing = "BOMB NEXT TO ME";
       cmd = bombNextToMe(last_move, percepts);
     }
+    
+    //We have reached the planned teleporter
     if (cmd.empty() && !plannedTeleporter.empty() && percepts.current[0] == plannedTeleporter &&
         !(teleporters[plannedTeleporter].destinationKnown) && percepts.detector != 1) {
-
       currentlyDoing = "Using teleport " + plannedTeleporter;
       cmd = "U";
     }
   }
 
+
+
+
+
+
   //Doing Commants from goal_path
-  // Execute and remove a route command only when no other action was selected.
   if (cmd.empty() && !goal_path.commands.empty() && percepts.detector != 1) {
     currentlyDoing = "Following goal path";
     cmd = goal_path.commands.top();
     goal_path.commands.pop();
   }
 
+
+
+
+
+  if (id == 0) { //reset all signals to 0
+    comms->SetSignal(1, 0);
+  } 
+  if( matchesTeleporter(percepts.current[0], symbols.teleporters) ){
+    comms->SetSignal(1, 1);
+  }
   cout << "Currently doing: " << currentlyDoing << endl;
   cout << "last move " << last_move << endl;
   cout << "CMD:      " << cmd << endl;
